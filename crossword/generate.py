@@ -1,6 +1,6 @@
 import sys
 
-from crossword.crossword import *
+from crossword import *
 
 
 class CrosswordCreator():
@@ -336,9 +336,12 @@ def main():
         sys.exit("Usage: python generate.py structure words [output]")
 
     # Parse command-line arguments
-    structure = sys.argv[1]
+    #structure = sys.argv[1]
     words = sys.argv[2]
     output = sys.argv[3] if len(sys.argv) == 4 else None
+
+    structure = Structure((10, 10))
+    print(structure)
 
     # Generate crossword
     crossword = Crossword(structure, words)
