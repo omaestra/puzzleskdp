@@ -1,6 +1,6 @@
 import sys
 
-from crossword import *
+from crossword.crossword import *
 
 
 class CrosswordCreator():
