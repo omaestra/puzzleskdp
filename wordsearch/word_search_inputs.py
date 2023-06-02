@@ -4,14 +4,27 @@ from string import ascii_uppercase
 
 
 def generate_word_search(words, size):
+    """
+    Generates a word search puzzle grid and word positions based on a set of words and grid size.
+
+    Parameters:
+    - words (list): A list of words to include in the puzzle.
+    - size (int): The size of the word search grid.
+
+    Returns:
+    - grid (list): A 2D list representing the word search puzzle grid.
+    - word_positions (dict): A dictionary mapping the positions of the words in the grid.
+    """
     grid = [[' ' for _ in range(size)] for _ in range(size)]
-    word_positions = {}  # Dictionary to store the positions of the words
-    
+    word_positions = {}
+
     for word in words:
         word = word.upper()
+        if word in word_positions:
+            continue  # Skip duplicate words
         placed = False
         attempts = 0
-        max_attempts = 100  # Maximum number of attempts to find a valid placement
+        max_attempts = 100
 
         while not placed and attempts < max_attempts:
             direction = random.choice(['horizontal', 'vertical', 'diagonal'])
@@ -19,11 +32,7 @@ def generate_word_search(words, size):
 
             if direction == 'horizontal':
                 if col + len(word) <= size:
-                    valid_placement = True
-                    for i in range(len(word)):
-                        if grid[row][col + i] != ' ' and grid[row][col + i] != word[i]:
-                            valid_placement = False
-                            break
+                    valid_placement = all(grid[row][col + i] in (' ', word[i]) for i in range(len(word)))
                     if valid_placement:
                         for i in range(len(word)):
                             grid[row][col + i] = word[i]
@@ -32,11 +41,7 @@ def generate_word_search(words, size):
 
             elif direction == 'vertical':
                 if row + len(word) <= size:
-                    valid_placement = True
-                    for i in range(len(word)):
-                        if grid[row + i][col] != ' ' and grid[row + i][col] != word[i]:
-                            valid_placement = False
-                            break
+                    valid_placement = all(grid[row + i][col] in (' ', word[i]) for i in range(len(word)))
                     if valid_placement:
                         for i in range(len(word)):
                             grid[row + i][col] = word[i]
@@ -45,11 +50,7 @@ def generate_word_search(words, size):
 
             elif direction == 'diagonal':
                 if row + len(word) <= size and col + len(word) <= size:
-                    valid_placement = True
-                    for i in range(len(word)):
-                        if grid[row + i][col + i] != ' ' and grid[row + i][col + i] != word[i]:
-                            valid_placement = False
-                            break
+                    valid_placement = all(grid[row + i][col + i] in (' ', word[i]) for i in range(len(word)))
                     if valid_placement:
                         for i in range(len(word)):
                             grid[row + i][col + i] = word[i]
@@ -67,6 +68,16 @@ def generate_word_search(words, size):
 
 
 def generate_html_template(grid, word_positions):
+    """
+    Generates an HTML template for displaying the word search puzzle grid.
+
+    Parameters:
+    - grid (list): A 2D list representing the word search puzzle grid.
+    - word_positions (dict): A dictionary mapping the positions of the words in the grid.
+
+    Returns:
+    - template (str): The HTML template for displaying the word search puzzle grid.
+    """
     size = len(grid)
     template = """
     <!DOCTYPE html>
@@ -133,31 +144,50 @@ def generate_html_template(grid, word_positions):
     return template
 
 
+def generate_word_search_puzzle(size, words_num, words_file):
+    words = []
+    with open(words_file) as f:
+        words_list = list(f.read().upper().splitlines())
+        words = random.sample(words_list, words_num)
+
+    grid, word_positions = generate_word_search(words, size)
+    template = generate_html_template(grid, word_positions)
+
+    return template
+
+
 def main():
-     # Check usage
+    """
+    Main entry point for executing the word search puzzle generation. 
+    Parses command line arguments, generates the word search puzzle, and saves it to an HTML file.
+
+    Command Line Arguments:
+    - size (int): The size of the word search grid.
+    - words_num (int): The number of words to include in the puzzle.
+    - words_file (str): Path to a file containing the word vocabulary.
+    - output (optional, str): Path to the output HTML file. If not provided, 'word_search_puzzle.html' will be used.
+
+    Usage Example:
+    ```
+    python word_search_puzzle.py 10 5 vocabulary.txt
+    ```
+
+    This example generates a word search puzzle with a grid size of 10x10, including 5 words randomly selected from the vocabulary file 'vocabulary.txt'. The output is saved to 'word_search_puzzle.html'.
+    """
     if len(sys.argv) not in [3, 4]:
-        sys.exit("Usage: python crossword_search_inputs.py {{ size }} {{ words_num }} {{ words_file }} [output]")
+        sys.exit("Usage: python word_search_puzzle.py <size> <words_num> <words_file> [output]")
 
     size = int(sys.argv[1])
     words_num = int(sys.argv[2])
     words_file = sys.argv[3]
 
-    words = []
-    # Save vocabulary list
-    with open(words_file) as f:
-        words_list = list(f.read().upper().splitlines())
-        words = random.sample(words_list, words_num)
-        
-    grid, word_positions = generate_word_search(words, size)
-    template = generate_html_template(grid, word_positions)
+    puzzle_html = generate_word_search_puzzle(size, words_num, words_file)
 
-    with open('word_search_puzzle.html', 'w') as f:
-        f.write(template)
+    output_file = 'word_search_puzzle.html'
+    with open(output_file, 'w') as f:
+        f.write(puzzle_html)
 
     print('Word search puzzle generated successfully.')
 
-
 if __name__ == '__main__':
     main()
-
-
