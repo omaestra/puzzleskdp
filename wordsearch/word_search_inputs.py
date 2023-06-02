@@ -1,12 +1,11 @@
 import random
+import sys
 from string import ascii_uppercase
 
 
-def generate_word_search(words):
-    size = max(len(word) for word in words)
+def generate_word_search(words, size):
     grid = [[' ' for _ in range(size)] for _ in range(size)]
     word_positions = {}  # Dictionary to store the positions of the words
-    sorted_words = sorted(words, key=len)
     
     for word in words:
         word = word.upper()
@@ -59,12 +58,10 @@ def generate_word_search(words):
 
             attempts += 1
 
-    letters = ascii_uppercase#.replace('Q', '')
-
     for row in range(size):
         for col in range(size):
             if grid[row][col] == ' ':
-                grid[row][col] = random.choice(letters)
+                grid[row][col] = random.choice(ascii_uppercase)
 
     return grid, word_positions
 
@@ -137,16 +134,21 @@ def generate_html_template(grid, word_positions):
 
 
 def main():
-        # Ask the user for the number of words
-    num_words = int(input("Enter the number of words: "))
+     # Check usage
+    if len(sys.argv) not in [3, 4]:
+        sys.exit("Usage: python crossword_search_inputs.py {{ size }} {{ words_num }} {{ words_file }} [output]")
 
-    # Ask the user to provide a list of words
+    size = int(sys.argv[1])
+    words_num = int(sys.argv[2])
+    words_file = sys.argv[3]
+
     words = []
-    for i in range(num_words):
-        word = input(f"Enter word {i+1}: ")
-        words.append(word.upper())
+    # Save vocabulary list
+    with open(words_file) as f:
+        words_list = list(f.read().upper().splitlines())
+        words = random.sample(words_list, words_num)
         
-    grid, word_positions = generate_word_search(words)
+    grid, word_positions = generate_word_search(words, size)
     template = generate_html_template(grid, word_positions)
 
     with open('word_search_puzzle.html', 'w') as f:
