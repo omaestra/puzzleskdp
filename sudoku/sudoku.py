@@ -1,15 +1,42 @@
+import sys
 import random
+from enum import Enum
 
 class SudokuPuzzle:
-    def __init__(self):
+    class DIFFICULTY(Enum):
+        EASY = "easy"
+        MEDIUM = "medium"
+        HARD = "hard"
+        
+    def __init__(self, difficulty):
         self.puzzle = [[0] * 9 for _ in range(9)]
         self.incomplete_puzzle = None
         self.solved_puzzle = None
+        self.difficulty = SudokuPuzzle.DIFFICULTY(difficulty)
+
+    def clues_to_remove(self):
+        if self.difficulty == SudokuPuzzle.DIFFICULTY.EASY: return 35
+        if self.difficulty == SudokuPuzzle.DIFFICULTY.MEDIUM: return 45
+        if self.difficulty == SudokuPuzzle.DIFFICULTY.HARD: return 55
 
     def generate_puzzle(self):
         self._fill_diagonal_grids()
         self._solve_puzzle()
         return self.puzzle
+
+    def generate_incomplete_puzzle(self):
+        incomplete_puzzle = [row.copy() for row in self.puzzle]
+        num_clues = self.clues_to_remove()
+
+        for _ in range(num_clues):
+            while True:
+                row = random.randint(0, 8)
+                col = random.randint(0, 8)
+                if incomplete_puzzle[row][col] != 0:
+                    incomplete_puzzle[row][col] = 0
+                    break
+
+        return incomplete_puzzle
 
     def _fill_diagonal_grids(self):
         for i in range(0, 9, 3):
@@ -104,7 +131,6 @@ class SudokuPuzzle:
             </style>
         </head>
         <body>
-        <h1>Vamos a hacer demasiado billete con chatGPT</h1>
             <div class="grid">
         """
 
@@ -129,37 +155,34 @@ class SudokuPuzzle:
 
 
 def generate_puzzle(difficulty):
-    puzzle = SudokuPuzzle()
+    puzzle = SudokuPuzzle(difficulty=difficulty)
     generated_puzzle = puzzle.generate_puzzle()
-
-    incomplete_puzzle = [row.copy() for row in generated_puzzle]
-
-    clues_to_remove = {
-        "easy": 35,
-        "medium": 45,
-        "hard": 55
-    }
-    num_clues = clues_to_remove[difficulty]
-
-    for _ in range(num_clues):
-        while True:
-            row = random.randint(0, 8)
-            col = random.randint(0, 8)
-            if incomplete_puzzle[row][col] != 0:
-                incomplete_puzzle[row][col] = 0
-                break
-
+    
     solved_puzzle = [row.copy() for row in generated_puzzle]
+    incomplete_puzzle = puzzle.generate_incomplete_puzzle()
+    
     puzzle.generate_html(generated_puzzle)
     html_incomplete = puzzle.generate_html(incomplete_puzzle)
     html_solved = puzzle.generate_html(solved_puzzle)
 
-    with open("sudoku_puzzle_incomplete.html", "w") as file:
-        file.write(html_incomplete)
+    return (html_incomplete, html_solved)
 
-    with open("sudoku_puzzle_solved.html", "w") as file:
-        file.write(html_solved)
+def main():
+    # Check usage
+    if len(sys.argv) not in [3, 4]:
+        sys.exit("Usage: python sudoku.py {{ difficulty }} {{ times }} [output]")
 
-    return generated_puzzle
+    difficulty = sys.argv[1]
+    times = int(sys.argv[2])
 
-puzzle = generate_puzzle("medium")
+    for i in range(times):
+        (html_incomplete, html_solved) = generate_puzzle(difficulty)
+
+        with open("sudoku_puzzle_incomplete_{}.html".format(i), "w") as file:
+            file.write(html_incomplete)
+
+        with open("sudoku_puzzle_solved_{}.html".format(i), "w") as file:
+            file.write(html_solved)
+
+if __name__ == "__main__":
+    main()
