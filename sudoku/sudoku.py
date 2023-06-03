@@ -1,6 +1,10 @@
 import sys
 import random
 from enum import Enum
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+
 
 class SudokuPuzzle:
     class DIFFICULTY(Enum):
@@ -89,69 +93,69 @@ class SudokuPuzzle:
                     return i, j
         return None
 
-    def generate_html(self, puzzle):
-        html = """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Sudoku Puzzle</title>
-            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-            <style>
-                .grid {
-                    display: grid;
-                    grid-template-columns: repeat(9, 1fr);
-                    grid-template-rows: repeat(9, 1fr);
-                    
-                    border: 2px solid #333;
-                    
-                    width: max-content;
-                    margin: 50px auto;
-                    border-radius: 10px;
-                    background-color: #fff;
-                    font-family: Arial, sans-serif;
-                    font-size: 24px;
-                    font-weight: bold;
-                    overflow: hidden;
-                }
-                .cell {
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    height: 100%;
-                    width: 50px;
-                    padding: 8px;
-                    border: 1px solid #333;
-                }
-                .cell.small-grid {
-                    background-color: #f0f0f0;
-                }
-                .cell.empty {
-                    color: #aaa;
-                }
-            </style>
-        </head>
-        <body>
-            <div class="grid">
-        """
+def generate_html(puzzle):
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Sudoku Puzzle</title>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+        <style>
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(9, 1fr);
+                grid-template-rows: repeat(9, 1fr);
+                
+                border: 2px solid #333;
+                
+                width: max-content;
+                margin: 50px auto;
+                border-radius: 10px;
+                background-color: #fff;
+                font-family: Arial, sans-serif;
+                font-size: 24px;
+                font-weight: bold;
+                overflow: hidden;
+            }
+            .cell {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 100%;
+                width: 50px;
+                padding: 8px;
+                border: 1px solid #333;
+            }
+            .cell.small-grid {
+                background-color: #f0f0f0;
+            }
+            .cell.empty {
+                color: #aaa;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="grid">
+    """
 
-        for i in range(9):
-            for j in range(9):
-                value = puzzle[i][j]
-                cell_class = "cell"
-                if (i // 3) % 2 == (j // 3) % 2:
-                    cell_class += " small-grid"
-                if value == 0:
-                    cell_class += " empty"
-                    value = ""
-                html += f'            <div class="{cell_class}">{value}</div>\n'
+    for i in range(9):
+        for j in range(9):
+            value = puzzle[i][j]
+            cell_class = "cell"
+            if (i // 3) % 2 == (j // 3) % 2:
+                cell_class += " small-grid"
+            if value == 0:
+                cell_class += " empty"
+                value = ""
+            html += f'            <div class="{cell_class}">{value}</div>\n'
 
-        html += """
-            </div>
-        </body>
-        </html>
-        """
+    html += """
+        </div>
+    </body>
+    </html>
+    """
 
-        return html
+    return html
 
 
 def generate_puzzle(difficulty):
@@ -160,12 +164,46 @@ def generate_puzzle(difficulty):
     
     solved_puzzle = [row.copy() for row in generated_puzzle]
     incomplete_puzzle = puzzle.generate_incomplete_puzzle()
-    
-    puzzle.generate_html(generated_puzzle)
-    html_incomplete = puzzle.generate_html(incomplete_puzzle)
-    html_solved = puzzle.generate_html(solved_puzzle)
 
-    return (html_incomplete, html_solved)
+    puzzle.incomplete_puzzle = incomplete_puzzle
+    puzzle.solved_puzzle = solved_puzzle
+
+    return (puzzle)
+
+def generate_html_file(puzzle, output_file):
+    html = generate_html(puzzle)
+
+    with open("{}.html".format(output_file), "w") as file:
+        file.write(html)
+
+    return (html)
+
+def generate_sudoku_grid(puzzle, output_file):
+    fig, ax = plt.subplots(figsize=(6, 6))
+    ax.set_aspect("equal")
+    ax.set_xlim([0, 9])
+    ax.set_ylim([0, 9])
+    ax.axis("off")
+
+    for i in range(9):
+        for j in range(9):
+            cell_color = "white"
+            if (i // 3 + j // 3) % 2 == 0:
+                cell_color = "#f2f2f2"  # Light gray
+
+            rect = Rectangle((j, i), 1, 1, linewidth=2, edgecolor="gray", facecolor=cell_color)
+            ax.add_patch(rect)
+
+            if puzzle[i][j] != 0:
+                ax.text(j + 0.5, i + 0.5, str(puzzle[i][j]), color="black",
+                        fontsize=16, ha="center", va="center")
+
+    for i in range(3, 9, 3):
+        ax.axhline(i, color="gray", linewidth=1)
+        ax.axvline(i, color="gray", linewidth=1)
+
+    plt.savefig("{}.png".format(output_file), transparent=True, bbox_inches="tight", pad_inches=0)
+    plt.close()
 
 def main():
     # Check usage
@@ -176,13 +214,13 @@ def main():
     times = int(sys.argv[2])
 
     for i in range(times):
-        (html_incomplete, html_solved) = generate_puzzle(difficulty)
+        puzzle = generate_puzzle(difficulty)
 
-        with open("sudoku_puzzle_incomplete_{}.html".format(i), "w") as file:
-            file.write(html_incomplete)
+        generate_html_file(puzzle.solved_puzzle, "puzzle_solved_{}".format(i))
+        generate_html_file(puzzle.incomplete_puzzle, "puzzle_incomplete_{}".format(i))
 
-        with open("sudoku_puzzle_solved_{}.html".format(i), "w") as file:
-            file.write(html_solved)
+        generate_sudoku_grid(puzzle.solved_puzzle, "puzzle_solved{}".format(i))
+        generate_sudoku_grid(puzzle.incomplete_puzzle, "puzzle_incomplete{}".format(i))
 
 if __name__ == "__main__":
     main()
