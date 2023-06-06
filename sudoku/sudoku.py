@@ -4,6 +4,7 @@ from enum import Enum
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+from PIL import Image, ImageDraw
 
 
 class SudokuPuzzle:
@@ -179,30 +180,38 @@ def generate_html_file(puzzle, output_file):
     return (html)
 
 def generate_sudoku_grid(puzzle, output_file):
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(8, 8))
     ax.set_aspect("equal")
     ax.set_xlim([0, 9])
     ax.set_ylim([0, 9])
     ax.axis("off")
 
+    # Draw the main grid
     for i in range(9):
         for j in range(9):
             cell_color = "white"
             if (i // 3 + j // 3) % 2 == 0:
                 cell_color = "#f2f2f2"  # Light gray
 
-            rect = Rectangle((j, i), 1, 1, linewidth=2, edgecolor="gray", facecolor=cell_color)
+            rect = Rectangle((j, i), 1, 1, linewidth=0.5, edgecolor="gray", facecolor=cell_color)
             ax.add_patch(rect)
 
             if puzzle[i][j] != 0:
                 ax.text(j + 0.5, i + 0.5, str(puzzle[i][j]), color="black",
                         fontsize=16, ha="center", va="center")
 
-    for i in range(3, 9, 3):
+    # Draw the outer border
+    #outer_border = Rectangle((0, 0), 9, 9, linewidth=2, edgecolor="black", facecolor="none")
+    #ax.add_patch(outer_border)
+
+    # Draw the inner grid lines (excluding top and left edges)
+    for i in range(3, 9):
         ax.axhline(i, color="gray", linewidth=1)
         ax.axvline(i, color="gray", linewidth=1)
-
-    plt.savefig("{}.png".format(output_file), transparent=True, bbox_inches="tight", pad_inches=0)
+        
+    plt.tight_layout()
+    plt.savefig("{}.png".format(output_file), transparent=True, dpi=300)
+    #plt.savefig("{}.png".format(output_file), transparent=True, bbox_inches="tight", pad_inches=0)
     plt.close()
 
 def main():
@@ -216,11 +225,11 @@ def main():
     for i in range(times):
         puzzle = generate_puzzle(difficulty)
 
-        generate_html_file(puzzle.solved_puzzle, "puzzle_solved_{}".format(i))
-        generate_html_file(puzzle.incomplete_puzzle, "puzzle_incomplete_{}".format(i))
+        #generate_html_file(puzzle.solved_puzzle, "puzzle_solved_{}".format(i))
+        #generate_html_file(puzzle.incomplete_puzzle, "puzzle_incomplete_{}".format(i))
 
-        generate_sudoku_grid(puzzle.solved_puzzle, "puzzle_solved{}".format(i))
-        generate_sudoku_grid(puzzle.incomplete_puzzle, "puzzle_incomplete{}".format(i))
+        generate_sudoku_grid(puzzle.solved_puzzle, "puzzle_solved_{0}_{1}".format(difficulty, i))
+        generate_sudoku_grid(puzzle.incomplete_puzzle, "puzzle_{0}_{1}".format(difficulty, i))
 
 if __name__ == "__main__":
     main()
